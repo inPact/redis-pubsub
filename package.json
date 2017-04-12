@@ -1,0 +1,33 @@
+{
+  "name": "redis-pubsub",
+  "version": "0.1.0",
+  "description": "A simple library for publishing and subscribing to messages via redis",
+  "main": "lib",
+  "scripts": {
+    "test": "mocha tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inPact/redis-pubsub.git"
+  },
+  "author": "joniba",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/inPact/redis-pubsub/issues"
+  },
+  "homepage": "https://github.com/inPact/redis-pubsub#readme",
+  "keywords": [
+    "redis",
+    "pubsub"
+  ],
+  "dependencies": {
+    "loglevel": "^1.4.1",
+    "redis": "^2.7.1",
+    "redis-url": "^1.2.1",
+    "uuid": "^3.0.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0"
+  }
+}
