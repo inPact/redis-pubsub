@@ -21,6 +21,7 @@
     "pubsub"
   ],
   "dependencies": {
+    "bluebird": "^3.5.0",
     "loglevel": "^1.4.1",
     "redis": "^2.7.1",
     "redis-url": "^1.2.1",
