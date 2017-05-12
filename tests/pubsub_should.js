@@ -2,7 +2,8 @@
 const should = require('chai').should();
 
 let messagesReceived = 0;
-let pubsub = require('../lib')({ logLevel: 'trace' });
+let pubsubFactory = require('../lib/pubsub_factory');
+let pubsub = pubsubFactory({ logLevel: 'trace' });
 
 describe('pubsub', function () {
     beforeEach(function () {
@@ -64,6 +65,36 @@ describe('pubsub', function () {
 
                     group1MessagesReceived.should.equal(2);
                     group2MessagesReceived.should.equal(1);
+
+                    done();
+                }, 100);
+            })
+        })
+    });
+
+    it('should subscribe to different channels', function (done) {
+        let channel1MessagesReceived = 0;
+        let channel2MessagesReceived = 0;
+
+        let pubsub1 = pubsub;
+        let pubsub2 = pubsubFactory('customChannel', { logLevel: 'trace' });
+
+        pubsub1.subscribeAsync('group1').then(subscriber1 => {
+            pubsub2.subscribeAsync('group1').then(subscriber2 => {
+                subscriber1.on('event', envelope => channel1MessagesReceived++);
+                subscriber2.on('event', envelope => channel2MessagesReceived++);
+
+                pubsub1.publish({ some: 'data' }, 'an-event', 'group1');
+                pubsub1.publish({ some: 'data' }, 'an-event', 'group1');
+                pubsub2.publish({ some: 'data' }, 'an-event', 'group1');
+                pubsub2.publish({ some: 'data' }, 'an-event', 'group2');
+
+                setTimeout(() => {
+                    subscriber1.unsubscribe();
+                    subscriber2.unsubscribe();
+
+                    channel1MessagesReceived.should.equal(2);
+                    channel2MessagesReceived.should.equal(1);
 
                     done();
                 }, 100);
