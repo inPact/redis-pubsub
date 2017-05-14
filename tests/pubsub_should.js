@@ -91,3 +91,51 @@ describe('pubsub', function () {
         })
     });
 });
+
+describe('pubsub channel', function () {
+    it('should be toString-able', function (done) {
+        let receivedEnvelope;
+        pubsub.on('channel?.group*', envelope => receivedEnvelope = envelope).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel3.group4.event5.op6');
+
+            setTimeout(() => {
+                should.exist(receivedEnvelope.channel);
+                receivedEnvelope.channel.toString().should.equal('channel3.group4.event5.op6');
+
+                subscriber.unsubscribe(done);
+            }, 100);
+        })
+    });
+
+    it('should return subtopics ? and *', function (done) {
+        let receivedEnvelope;
+        pubsub.on('channel?.group*', envelope => receivedEnvelope = envelope).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel3.group4.event5.op6');
+
+            setTimeout(() => {
+                should.exist(receivedEnvelope.channel.subTopics);
+                receivedEnvelope.channel.subTopics.length.should.equal(2);
+                receivedEnvelope.channel.subTopics[0].should.equal('event5');
+                receivedEnvelope.channel.subTopics[1].should.equal('op6');
+
+                subscriber.unsubscribe(done);
+            }, 100);
+        })
+    });
+
+    it('should return subtopics .*', function (done) {
+        let receivedEnvelope;
+        pubsub.on('channel3.group4.*', envelope => receivedEnvelope = envelope).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel3.group4.event5.op6');
+
+            setTimeout(() => {
+                should.exist(receivedEnvelope.channel.subTopics);
+                receivedEnvelope.channel.subTopics.length.should.equal(2);
+                receivedEnvelope.channel.subTopics[0].should.equal('event5');
+                receivedEnvelope.channel.subTopics[1].should.equal('op6');
+
+                subscriber.unsubscribe(done);
+            }, 100);
+        })
+    });
+});
