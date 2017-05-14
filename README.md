@@ -2,6 +2,9 @@
 A simple library for publishing and subscribing messages via redis
 
 # release notes
+### 0.4.2
+* Additional information on the Channel object (event name, topic)
+
 ### 0.4.1
 * Subscribers now receive a Channel object in the received message
 
