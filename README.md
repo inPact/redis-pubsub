@@ -2,6 +2,9 @@
 A simple library for publishing and subscribing messages via redis
 
 # release notes
+### 0.4.1
+* Subscribers now receive a Channel object in the received message
+
 ## 0.4.0
 * (Breaking changes)
   * Removed channel, group, and event concepts: The library now accepts any pattern,
@@ -14,7 +17,6 @@ A simple library for publishing and subscribing messages via redis
 * Simplified event registration with the PubSub.on function, so that consumers do not need
   to first acquire a Subscriber instance, though the PubSub.on and PubSub.onAny function return
   the Subscriber instance in case consumers wish to unsubscribe later.
-* Subscribers now receive a Channel object in the received message
 
 ## 0.3.0
 * (Breaking changes) Added support for creating pub-sub instances that publish and subscribe on
