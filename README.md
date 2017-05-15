@@ -2,6 +2,11 @@
 A simple library for publishing and subscribing messages via redis
 
 # release notes
+### 0.4.3
+* fix subscriber bug (redis options weren't getting passed to subscriber)
+* publisher (and associated redis connection) is now created lazily on demand
+* debug logs and cleanup
+
 ### 0.4.2
 * Additional information on the Channel object (event name, topic)
 
