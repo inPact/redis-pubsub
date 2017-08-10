@@ -2,7 +2,8 @@
 const should = require('chai').should();
 
 let messagesReceived = 0;
-let pubsub = require('../lib')({ logLevel: 'trace' });
+let pubsubFactory = require('../lib/pubsub_factory');
+let pubsub = pubsubFactory({ logLevel: 'trace' });
 
 describe('pubsub', function () {
     beforeEach(function () {
@@ -10,9 +11,20 @@ describe('pubsub', function () {
     });
 
     it('should receive any event', function (done) {
-        pubsub.subscribeAsync().then(subscriber => {
-            subscriber.on('event', envelope => messagesReceived++);
-            pubsub.publish({ some: 'data' }, 'an-event', 'group1');
+        pubsub.onAny(null, envelope => messagesReceived++).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel1.group1.event1');
+
+            setTimeout(() => {
+                messagesReceived.should.equal(1);
+                subscriber.unsubscribe(done);
+            }, 100);
+        })
+    });
+
+    it('should receive child topics', function (done) {
+        let pattern = pubsub.getPattern('channel1');
+        pubsub.on(pattern.subTopicsPattern, envelope => messagesReceived++).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel1.group1.event1');
 
             setTimeout(() => {
                 messagesReceived.should.equal(1);
@@ -22,9 +34,8 @@ describe('pubsub', function () {
     });
 
     it('should not receive events that weren\'t subscribed to', function (done) {
-        pubsub.subscribeAsync('group2').then(subscriber => {
-            subscriber.on('event', envelope => messagesReceived++);
-            pubsub.publish({ some: 'data' }, 'an-event', 'group1');
+        pubsub.onAny('channel2', envelope => messagesReceived++).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel1.group1.event1');
 
             setTimeout(() => {
                 messagesReceived.should.equal(0);
@@ -33,10 +44,22 @@ describe('pubsub', function () {
         })
     });
 
-    it('should receive subscribed-to events', function (done) {
-        pubsub.subscribeAsync('group1').then(subscriber => {
-            subscriber.on('event', envelope => messagesReceived++);
-            pubsub.publish({ some: 'data' }, 'an-event', 'group1');
+    it('should receive by exact topic-match', function (done) {
+        pubsub.on('channel1.group1.event1', envelope => messagesReceived++).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel1.group1.event1');
+            pubsub.publish({ some: 'data' }, 'channel1.group1.event2');
+
+            setTimeout(() => {
+                messagesReceived.should.equal(1);
+                subscriber.unsubscribe(done);
+            }, 100);
+        })
+    });
+
+    it('should by custom pattern', function (done) {
+        pubsub.on('channel1#group1#event1*', envelope => messagesReceived++).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel1#group1#event1#from:some-publisher');
+            pubsub.publish({ some: 'data' }, 'channel1.group1.event1');
 
             setTimeout(() => {
                 messagesReceived.should.equal(1);
@@ -49,14 +72,11 @@ describe('pubsub', function () {
         let group1MessagesReceived = 0;
         let group2MessagesReceived = 0;
 
-        pubsub.subscribeAsync('group1').then(subscriber1 => {
-            pubsub.subscribeAsync('group2').then(subscriber2 => {
-                subscriber1.on('event', envelope => group1MessagesReceived++);
-                subscriber2.on('event', envelope => group2MessagesReceived++);
-
-                pubsub.publish({ some: 'data' }, 'an-event', 'group1');
-                pubsub.publish({ some: 'data' }, 'an-event', 'group1');
-                pubsub.publish({ some: 'data' }, 'an-event', 'group2');
+        pubsub.onAny('channel1.group1', envelope => group1MessagesReceived++).then(subscriber1 => {
+            pubsub.onAny('channel1.group2', envelope => group2MessagesReceived++).then(subscriber2 => {
+                pubsub.publish({ some: 'data' }, 'channel1.group1.event1');
+                pubsub.publish({ some: 'data' }, 'channel1.group1.event1');
+                pubsub.publish({ some: 'data' }, 'channel1.group2.event2');
 
                 setTimeout(() => {
                     subscriber1.unsubscribe();
@@ -68,6 +88,54 @@ describe('pubsub', function () {
                     done();
                 }, 100);
             })
+        })
+    });
+});
+
+describe('pubsub channel', function () {
+    it('should be toString-able', function (done) {
+        let receivedEnvelope;
+        pubsub.on('channel?.group*', envelope => receivedEnvelope = envelope).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel3.group4.event5.op6');
+
+            setTimeout(() => {
+                should.exist(receivedEnvelope.channel);
+                receivedEnvelope.channel.toString().should.equal('channel3.group4.event5.op6');
+
+                subscriber.unsubscribe(done);
+            }, 100);
+        })
+    });
+
+    it('should return subtopics ? and *', function (done) {
+        let receivedEnvelope;
+        pubsub.on('channel?.group*', envelope => receivedEnvelope = envelope).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel3.group4.event5.op6');
+
+            setTimeout(() => {
+                should.exist(receivedEnvelope.channel.subTopics);
+                receivedEnvelope.channel.subTopics.length.should.equal(2);
+                receivedEnvelope.channel.subTopics[0].should.equal('event5');
+                receivedEnvelope.channel.subTopics[1].should.equal('op6');
+
+                subscriber.unsubscribe(done);
+            }, 100);
+        })
+    });
+
+    it('should return subtopics .*', function (done) {
+        let receivedEnvelope;
+        pubsub.on('channel3.group4.*', envelope => receivedEnvelope = envelope).then(subscriber => {
+            pubsub.publish({ some: 'data' }, 'channel3.group4.event5.op6');
+
+            setTimeout(() => {
+                should.exist(receivedEnvelope.channel.subTopics);
+                receivedEnvelope.channel.subTopics.length.should.equal(2);
+                receivedEnvelope.channel.subTopics[0].should.equal('event5');
+                receivedEnvelope.channel.subTopics[1].should.equal('op6');
+
+                subscriber.unsubscribe(done);
+            }, 100);
         })
     });
 });

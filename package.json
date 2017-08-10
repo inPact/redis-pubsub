@@ -1,8 +1,8 @@
 {
   "name": "redis-pubsub",
-  "version": "0.1.1",
+  "version": "0.4.4",
   "description": "A simple library for publishing and subscribing to messages via redis",
-  "main": "lib",
+  "main": "index.js",
   "scripts": {
     "test": "mocha tests"
   },
@@ -21,11 +21,12 @@
     "pubsub"
   ],
   "dependencies": {
-    "bluebird": "^3.5.0",
-    "loglevel": "^1.4.1",
-    "redis": "^2.7.1",
-    "redis-url": "^1.2.1",
-    "uuid": "^3.0.1"
+    "bluebird": "3.5.0",
+    "debug": "2.6.6",
+    "lodash": "4.17.4",
+    "loglevel": "1.4.1",
+    "redis": "2.7.1",
+    "redis-url": "1.2.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
